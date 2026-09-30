@@ -1,0 +1,151 @@
+# hotui configuration
+#
+# Looked up in this order:
+#   1. --config <path>
+#   2. $XDG_CONFIG_HOME/hotui/config.toml (~/.config/hotui/config.toml)
+# If neither exists, this default is written to (2) on first run.
+#
+# Each [[sensor]] gets its own live graph. `min`/`max` set the normal display
+# range for the Y axis. If a reading goes past either bound the graph rescales
+# to fit it, and every reading above `max` is drawn in red.
+#
+# Sources:
+#   source = "hwmon"   chip = <name in /sys/class/hwmon/hwmon*/name>
+#                      sensor = <temp*_label text>   OR   input = "tempN_input"
+#   source = "nvidia"  index = <GPU index> (reads via NVML)
+#
+# Defaults below are tuned for this machine:
+#   Gigabyte B550I AORUS PRO AX · Ryzen 9 3900X · GeForce GTX 1660
+#   · Gigabyte GP-ASM2NE6100TTTD NVMe · RTL8125 2.5GbE · MT7921 Wi-Fi
+
+[general]
+refresh_ms = 1000     # sample interval
+history_secs = 120    # how much history each graph shows
+columns = 3           # graph grid columns (change live with +/-)
+
+# ---------------------------------------------------------------- CPU
+# Ryzen 9 3900X: Tjmax 95°C. ~40-50 idle, 75-85 under all-core load.
+[[sensor]]
+label = "CPU Tctl"
+source = "hwmon"
+chip = "k10temp"
+sensor = "Tctl"
+min = 30
+max = 85
+
+[[sensor]]
+label = "CPU CCD1"
+source = "hwmon"
+chip = "k10temp"
+sensor = "Tccd1"
+min = 30
+max = 85
+
+[[sensor]]
+label = "CPU CCD2"
+source = "hwmon"
+chip = "k10temp"
+sensor = "Tccd2"
+min = 30
+max = 85
+
+# ---------------------------------------------------------------- GPU
+# GTX 1660: default GPU Boost temp target is 83°C, slowdown ~93°C.
+[[sensor]]
+label = "GPU GTX 1660"
+source = "nvidia"
+index = 0
+min = 25
+max = 83
+
+# ---------------------------------------------------------------- Storage
+# GP-ASM2NE6100TTTD (Phison E12): firmware warning 89.85°C, critical 94.85°C;
+# it starts throttling in the 70s, so treat 70 as the ceiling.
+[[sensor]]
+label = "NVMe M.2 (Aorus 1TB)"
+source = "hwmon"
+chip = "nvme"
+sensor = "Composite"
+min = 25
+max = 70
+
+# ---------------------------------------------------------------- Motherboard
+# gigabyte_wmi exposes six unlabeled temps. The names below are a best guess
+# for the B550I AORUS PRO AX — compare with BIOS / HWiNFO and relabel.
+[[sensor]]
+label = "Board System"
+source = "hwmon"
+chip = "gigabyte_wmi"
+input = "temp1_input"
+min = 20
+max = 60
+
+[[sensor]]
+label = "Board PCH"
+source = "hwmon"
+chip = "gigabyte_wmi"
+input = "temp2_input"
+min = 30
+max = 75
+
+[[sensor]]
+label = "Board CPU Socket"
+source = "hwmon"
+chip = "gigabyte_wmi"
+input = "temp3_input"
+min = 30
+max = 85
+
+[[sensor]]
+label = "Board VRM MOS"
+source = "hwmon"
+chip = "gigabyte_wmi"
+input = "temp5_input"
+min = 30
+max = 80
+
+[[sensor]]
+label = "Board PCIe x16"
+source = "hwmon"
+chip = "gigabyte_wmi"
+input = "temp6_input"
+min = 25
+max = 70
+
+# Reads a flat 20°C — looks like an unconnected header/thermistor.
+[[sensor]]
+label = "Board Aux (t4)"
+source = "hwmon"
+chip = "gigabyte_wmi"
+input = "temp4_input"
+min = 15
+max = 50
+enabled = false
+
+# ---------------------------------------------------------------- Network
+[[sensor]]
+label = "LAN RTL8125"
+source = "hwmon"
+chip = "r8169_0_400:00"
+input = "temp1_input"
+min = 30
+max = 70
+
+[[sensor]]
+label = "Wi-Fi MT7921"
+source = "hwmon"
+chip = "mt7921_phy0"
+input = "temp1_input"
+min = 30
+max = 75
+
+# ---------------------------------------------------------------- Misc
+# ACPI thermal zone reports a static 16.8°C on this board — not useful.
+[[sensor]]
+label = "ACPI Zone"
+source = "hwmon"
+chip = "acpitz"
+input = "temp1_input"
+min = 10
+max = 60
+enabled = false
